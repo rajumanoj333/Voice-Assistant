@@ -38,5 +38,10 @@ aiofiles>=23.0.0
 websockets>=11.0.0
 requests>=2.31.0
 
+# Streamlit and UI
 streamlit>=1.30.0
 soundfile>=0.12.1
+streamlit-audio-recorder>=0.1.5
+
+# Additional utilities
+python-dateutil>=2.8.2
