@@ -65,15 +65,13 @@ CREATE POLICY "Users can delete their own sessions" ON user_sessions
     FOR DELETE USING (auth.uid()::text = user_id);
 
 -- For development/testing: Allow anonymous access (remove in production)
--- Uncomment these if you want to allow anonymous access for testing
+-- These policies allow anonymous access for testing - REMOVE IN PRODUCTION!
 
-/*
 CREATE POLICY "Allow anonymous access to conversation_records" ON conversation_records
     FOR ALL USING (true);
 
 CREATE POLICY "Allow anonymous access to user_sessions" ON user_sessions
     FOR ALL USING (true);
-*/
 
 -- Create a function to automatically update last_activity
 CREATE OR REPLACE FUNCTION update_session_activity()
