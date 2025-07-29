@@ -1,199 +1,242 @@
-# Voice Assistant with gRPC
+# Voice Assistant with Supabase Database
 
-A comprehensive voice assistant system that integrates:
-- **SileroVAD** for voice activity detection
-- **Google Cloud Speech-to-Text** for transcription
-- **OpenAI GPT** for intelligent responses
-- **Google Cloud Text-to-Speech** for audio synthesis
-- **PostgreSQL** for conversation storage
-- **gRPC** for efficient client-server communication
+A comprehensive voice assistant system powered by **Supabase** that integrates:
+- **🗄️ Supabase** for cloud database and real-time features
+- **🎤 SileroVAD** for voice activity detection
+- **🗣️ Google Cloud Speech-to-Text** for transcription
+- **🤖 OpenAI GPT** for intelligent responses
+- **🔊 Google Cloud Text-to-Speech** for audio synthesis
+- **⚡ gRPC** for efficient client-server communication
+- **🌐 FastAPI** for REST API endpoints
 
-## Features
+## ✨ Features
 
-🎤 **Voice Activity Detection**: Uses SileroVAD to detect and extract speech segments
-🗣️ **Speech Recognition**: Google Cloud STT for accurate transcription
-🤖 **AI Processing**: OpenAI GPT for intelligent conversation
-🔊 **Speech Synthesis**: Google Cloud TTS for natural-sounding responses
-💾 **Conversation Storage**: Saves both audio and text to database
-⚡ **gRPC Communication**: Efficient binary protocol for audio streaming
-🔄 **Streaming Support**: Real-time audio processing capabilities
+🎤 **Voice Activity Detection**: Uses SileroVAD to detect and extract speech segments  
+🗣️ **Speech Recognition**: Google Cloud STT for accurate transcription  
+🤖 **AI Processing**: OpenAI GPT for intelligent conversation  
+🔊 **Speech Synthesis**: Google Cloud TTS for natural-sounding responses  
+💾 **Cloud Database**: Supabase for scalable conversation storage  
+⚡ **gRPC Communication**: Efficient binary protocol for audio streaming  
+🔄 **Streaming Support**: Real-time audio processing capabilities  
+🔒 **Security**: Row-level security with Supabase  
 
-## Architecture
+## 🏗️ Architecture
 
 ```
 Audio Input → SileroVAD → Google STT → OpenAI LLM → Google TTS → Audio Output
                 ↓                                                      ↓
-            Database ←←←←←←←←←← Conversation Storage ←←←←←←←←←←←←←←←←←←←
+           Supabase ←←←←←←←←←← Conversation Storage ←←←←←←←←←←←←←←←←←←←
 ```
 
-## Setup Instructions
+## 🚀 Quick Start Guide
 
-### 1. Install Dependencies
+### Prerequisites
 
+- Python 3.8+
+- Supabase account (free tier available)
+- OpenAI API key
+- Google Cloud account with Speech & Text-to-Speech APIs enabled
+
+### 1. Clone and Setup Environment
+
+#### Option A: Automated Setup (Recommended)
 ```bash
+# Clone the repository (if not already done)
+git clone <your-repo-url>
+cd voice-assistant
+
+# Run the automated setup script
+./setup.sh
+```
+
+#### Option B: Manual Setup
+```bash
+# Create virtual environment (recommended)
+python3 -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
+
+# Install dependencies
 pip install -r requirements.txt
 ```
 
-### 2. Database Setup
+### 2. Supabase Database Setup
 
-Install and configure PostgreSQL:
+#### Option A: Use Pre-configured Supabase Project (Recommended)
+The project comes with a pre-configured Supabase project. The credentials are already in the `.env` file.
 
+#### Option B: Create Your Own Supabase Project
+1. Go to [supabase.com](https://supabase.com) and create a new project
+2. Copy your project URL and anon key
+3. Update the `.env` file with your credentials
+4. Run the SQL schema in your Supabase dashboard
+
+**Setting up the database schema:**
+
+*Option A: Using the Setup Helper (Recommended)*
 ```bash
-# Ubuntu/Debian
-sudo apt-get install postgresql postgresql-contrib
-
-# Create database
-sudo -u postgres createdb voice_assistant
-sudo -u postgres createuser --interactive
+python3 setup_supabase_schema.py
 ```
 
-### 3. Google Cloud Setup
+*Option B: Manual Setup*
+1. Go to your Supabase dashboard → SQL Editor
+2. Copy the contents of `supabase_schema.sql`
+3. Paste and execute the SQL script
+4. This creates the necessary tables, indexes, and security policies
+
+### 3. Configure Environment Variables
+
+The `.env` file is already created. Update the following variables:
+
+```bash
+# Required: OpenAI API Key
+OPENAI_API_KEY=your_actual_openai_api_key_here
+
+# Required: Google Cloud Service Account
+GOOGLE_APPLICATION_CREDENTIALS=/path/to/your/google-service-account.json
+
+# Supabase credentials (already configured)
+SUPABASE_URL=https://czqnzosfhqthjjblkmfh.supabase.co
+SUPABASE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+```
+
+### 4. Google Cloud Setup
 
 1. Create a Google Cloud project
 2. Enable Speech-to-Text and Text-to-Speech APIs
 3. Create a service account and download the JSON key file
-4. Set the environment variable:
+4. Update `GOOGLE_APPLICATION_CREDENTIALS` in `.env` with the path to your JSON file
+
+### 5. Verify Setup
+
+Run the comprehensive setup verification script:
 
 ```bash
-export GOOGLE_APPLICATION_CREDENTIALS="/path/to/your/service-account-key.json"
+python3 setup_verification.py
 ```
 
-### 4. Environment Configuration
+This will check:
+- ✅ Python version and dependencies
+- ✅ Environment variables
+- ✅ Project files
+- ✅ Supabase connection
+- ✅ Database schema
+- ✅ Basic functionality
 
-Copy the example environment file and configure it:
+**Alternative:** Run the focused Supabase test:
+```bash
+python3 test_supabase.py
+```
+
+### 6. Generate gRPC Code (if needed)
 
 ```bash
-cp .env.example .env
-# Edit .env with your actual values
+python3 generate_grpc.py
 ```
 
-Required environment variables:
-- `OPENAI_API_KEY`: Your OpenAI API key
-- `DATABASE_URL`: PostgreSQL connection string
-- `GOOGLE_APPLICATION_CREDENTIALS`: Path to Google Cloud service account JSON
+## 🎯 Running the Application
 
-### 5. Generate gRPC Code
+### Method 1: FastAPI Server (Recommended for testing)
 
 ```bash
-python generate_grpc.py
+python3 main.py
 ```
 
-### 6. Initialize Database
+The server starts on `http://localhost:8000`
+
+**Available endpoints:**
+- `GET /health` - Check system health and database status
+- `POST /process-text/` - Process text input with LLM
+- `POST /upload-audio/` - Upload and process audio files
+- `GET /conversation-history/{user_id}` - Get conversation history
+- `WebSocket /ws/audio` - Real-time audio processing
+
+**API Documentation:** http://localhost:8000/docs
+
+### Method 2: gRPC Server (For production/advanced usage)
 
 ```bash
-python -c "from models import create_tables; create_tables()"
+python3 grpc_server.py
 ```
 
-## Usage
+The gRPC server starts on `localhost:50051`
 
-### Start the gRPC Server
+### Method 3: Client Examples
+
+Run the comprehensive client demo:
 
 ```bash
-python grpc_server.py
+python3 client_example.py
 ```
 
-The server will start on `localhost:50051` by default.
+## 🧪 Testing & Verification
 
-### Run the Client Example
+### Quick Health Check
 
 ```bash
-python client_example.py
+curl http://localhost:8000/health
 ```
 
-This will run a comprehensive demo showing:
-- Single voice requests
-- Streaming voice requests
-- Conversation history retrieval
-- Multiple requests in the same session
+Expected response:
+```json
+{
+  "status": "healthy",
+  "database": "connected",
+  "supabase_available": true
+}
+```
 
-### Using the FastAPI Server (Alternative)
-
-You can also run the FastAPI server for HTTP-based testing:
+### Test Text Processing
 
 ```bash
-python main.py
+curl -X POST "http://localhost:8000/process-text/" \
+  -H "Content-Type: application/x-www-form-urlencoded" \
+  -d "text=Hello, how are you today?"
 ```
 
-Access the API docs at `http://localhost:8000/docs`
+### View Conversation History
 
-## API Reference
-
-### gRPC Services
-
-#### ProcessVoice
-Processes a single audio request through the complete pipeline.
-
-**Request**: `AudioRequest`
-- `audio_data`: Raw audio bytes (WAV format recommended)
-- `session_id`: Unique session identifier
-- `user_id`: User identifier
-- `format`: Audio format (WAV, MP3, FLAC, OGG)
-- `sample_rate`: Audio sample rate (16000 recommended)
-
-**Response**: `AudioResponse`
-- `audio_data`: Synthesized response audio
-- `text_response`: LLM text response
-- `transcribed_text`: Original speech transcription
-- `success`: Operation success status
-- `error_message`: Error details if failed
-
-#### StreamVoice
-Handles streaming audio for real-time processing.
-
-**Request**: Stream of `AudioChunk`
-**Response**: Stream of `AudioChunk`
-
-#### GetConversationHistory
-Retrieves conversation history for a user/session.
-
-**Request**: `HistoryRequest`
-**Response**: `HistoryResponse` with conversation records
-
-## Example Usage
-
-### Python Client
-
-```python
-from client_example import VoiceAssistantClient
-
-# Create client
-client = VoiceAssistantClient('localhost:50051')
-
-# Load your audio file
-with open('audio.wav', 'rb') as f:
-    audio_data = f.read()
-
-# Process voice request
-response = client.process_voice_request(
-    audio_data=audio_data,
-    user_id="your_user_id",
-    session_id="your_session_id"
-)
-
-if response.success:
-    print(f"Transcription: {response.transcribed_text}")
-    print(f"Response: {response.text_response}")
-    
-    # Save response audio
-    with open('response.wav', 'wb') as f:
-        f.write(response.audio_data)
+```bash
+curl "http://localhost:8000/conversation-history/default_user?limit=5"
 ```
 
-### Streaming Example
+### Run Comprehensive Tests
 
-```python
-# Stream audio in chunks
-streaming_response = client.stream_voice_request(
-    audio_data=audio_data,
-    session_id="streaming_session"
-)
+```bash
+# Test Supabase integration
+python3 test_supabase.py
 
-if streaming_response:
-    with open('streaming_response.wav', 'wb') as f:
-        f.write(streaming_response)
+# Test the complete pipeline (if you have audio files)
+python3 client_example.py
 ```
 
-## Configuration
+## 📁 Project Structure
+
+```
+voice-assistant/
+├── 📄 README.md                 # This comprehensive guide
+├── 📄 SUPABASE_SETUP.md         # Detailed Supabase setup
+├── 📄 ARCHITECTURE.md           # System architecture details
+├── 📄 SETUP_SUMMARY.md          # Quick setup completion status
+├── 🔧 .env                      # Environment configuration
+├── 📦 requirements.txt          # Python dependencies
+├── 🗄️ supabase_schema.sql       # Database schema
+├── 🔧 supabase_client.py        # Supabase client wrapper
+├── 🧪 test_supabase.py          # Comprehensive test suite
+├── ✅ setup_verification.py     # Complete setup verification
+├── 🗄️ setup_supabase_schema.py  # Supabase schema setup helper
+├── 🛠️ setup.sh                  # Automated setup script
+├── 🚀 main.py                   # FastAPI server
+├── 🌐 grpc_server.py            # gRPC server
+├── 👤 client_example.py         # Client demonstration
+├── 🧠 models.py                 # Database models & services
+├── 🤖 llm_processor.py          # OpenAI LLM integration
+├── 🎤 vad_processor.py          # Voice activity detection
+├── ☁️ google_services.py        # Google Cloud services
+├── 📡 voice_assistant.proto     # gRPC service definition
+└── 🔧 generate_grpc.py          # gRPC code generator
+```
+
+## 🔧 Configuration
 
 ### Audio Requirements
 
@@ -204,71 +247,190 @@ if streaming_response:
 
 ### Database Schema
 
-The system uses two main tables:
+The Supabase database includes:
 
-1. **conversation_records**: Stores complete conversation data
-2. **user_sessions**: Tracks user sessions and activity
+1. **`conversation_records`**: Stores complete conversation data
+   - Audio input/output (as hex strings)
+   - Text input/responses
+   - User and session tracking
+   - Timestamps and metadata
 
-## Troubleshooting
+2. **`user_sessions`**: Manages user sessions
+   - Session lifecycle
+   - Activity tracking
+   - User association
 
-### Common Issues
+## 🐛 Troubleshooting
 
-1. **Google Cloud Authentication Error**
-   - Ensure `GOOGLE_APPLICATION_CREDENTIALS` is set correctly
-   - Verify the service account has necessary permissions
+### Common Issues & Solutions
 
-2. **Database Connection Error**
-   - Check PostgreSQL is running
-   - Verify `DATABASE_URL` format and credentials
-
-3. **Audio Processing Error**
-   - Ensure audio is in supported format (WAV recommended)
-   - Check sample rate is 16000 Hz
-   - Verify audio contains speech (not silence)
-
-4. **gRPC Connection Error**
-   - Ensure server is running on correct port
-   - Check firewall settings
-
-### Logs
-
-The system provides detailed logging. Check console output for:
-- Voice activity detection results
-- Transcription confidence scores
-- LLM processing status
-- Database operation results
-
-## Development
-
-### Project Structure
-
+#### 1. Supabase Connection Error
 ```
-├── voice_assistant.proto      # gRPC service definition
-├── grpc_server.py            # Main gRPC server
-├── client_example.py         # Client demonstration
-├── vad_processor.py          # SileroVAD integration
-├── google_services.py        # Google Cloud STT/TTS
-├── llm_processor.py          # OpenAI LLM processing
-├── models.py                 # Database models
-├── main.py                   # FastAPI server (alternative)
-└── requirements.txt          # Dependencies
+❌ Supabase connection failed
+```
+**Solutions:**
+- Verify `SUPABASE_URL` and `SUPABASE_KEY` in `.env`
+- Check network connectivity
+- Ensure Supabase project is active
+- Run: `python test_supabase.py` for detailed diagnostics
+
+#### 2. Database Schema Not Found
+```
+❌ Table 'conversation_records' doesn't exist
+```
+**Solutions:**
+- Go to Supabase dashboard → SQL Editor
+- Execute the contents of `supabase_schema.sql`
+- Enable anonymous access policies for development (see schema file)
+
+#### 3. OpenAI API Error
+```
+❌ OpenAI API key not found
+```
+**Solutions:**
+- Set valid `OPENAI_API_KEY` in `.env`
+- Verify API key has sufficient credits
+- Check API key permissions
+
+#### 4. Google Cloud Authentication Error
+```
+❌ Google Cloud credentials not found
+```
+**Solutions:**
+- Download service account JSON from Google Cloud Console
+- Set correct path in `GOOGLE_APPLICATION_CREDENTIALS`
+- Ensure Speech-to-Text and Text-to-Speech APIs are enabled
+
+#### 5. Import Errors
+```
+❌ ModuleNotFoundError: No module named 'supabase'
+```
+**Solutions:**
+```bash
+pip install -r requirements.txt
+# Or specifically:
+pip install supabase>=2.3.0
 ```
 
-### Adding New Features
+### Debug Mode
 
-1. Update `voice_assistant.proto` for new gRPC methods
-2. Regenerate code with `python generate_grpc.py`
-3. Implement new methods in `grpc_server.py`
-4. Update client examples
+Enable detailed logging:
+```bash
+export DEBUG=1
+python3 main.py
+```
 
-## License
+### Step-by-Step Verification
 
-This project is open source. Please check individual component licenses for Google Cloud, OpenAI, and other services.
+1. **Test Environment Variables:**
+   ```bash
+   python3 -c "from dotenv import load_dotenv; import os; load_dotenv(); print('Supabase URL:', os.getenv('SUPABASE_URL')[:30] + '...' if os.getenv('SUPABASE_URL') else 'Not set')"
+   ```
 
-## Support
+2. **Test Supabase Connection:**
+   ```bash
+   python3 -c "from supabase_client import supabase_client; print('Connection:', 'OK' if supabase_client.test_connection() else 'Failed')"
+   ```
 
-For issues and questions:
-1. Check the troubleshooting section
-2. Review logs for error details
-3. Ensure all dependencies are properly installed
-4. Verify environment configuration
+3. **Test Database Schema:**
+   ```bash
+   python3 test_supabase.py
+   ```
+
+4. **Test API Server:**
+   ```bash
+   python3 main.py &
+   curl http://localhost:8000/health
+   ```
+
+## 🚀 Production Deployment
+
+### Environment Setup
+
+1. **Set Production Environment Variables:**
+   ```bash
+   export SUPABASE_URL=your_production_supabase_url
+   export SUPABASE_KEY=your_production_supabase_key
+   export OPENAI_API_KEY=your_production_openai_key
+   export GOOGLE_APPLICATION_CREDENTIALS=/path/to/production/credentials.json
+   ```
+
+2. **Remove Anonymous Access:**
+   - Comment out anonymous policies in `supabase_schema.sql`
+   - Implement proper user authentication
+
+3. **Configure Row Level Security:**
+   - Review and adjust RLS policies in Supabase dashboard
+   - Test with authenticated users
+
+### Deployment Options
+
+- **Docker**: Build container with all dependencies
+- **Cloud Run**: Deploy FastAPI server to Google Cloud Run
+- **Heroku**: Use Heroku with Supabase add-on
+- **VPS**: Deploy on any VPS with Python support
+
+## 📚 API Reference
+
+### REST API Endpoints
+
+#### Health Check
+```http
+GET /health
+```
+Returns system status and database connectivity.
+
+#### Process Text
+```http
+POST /process-text/
+Content-Type: application/x-www-form-urlencoded
+
+text=Your message here
+```
+
+#### Upload Audio
+```http
+POST /upload-audio/
+Content-Type: multipart/form-data
+
+file: audio_file.wav
+```
+
+#### Get Conversation History
+```http
+GET /conversation-history/{user_id}?limit=10&session_id=optional
+```
+
+### gRPC Services
+
+See `voice_assistant.proto` for complete service definitions:
+- `ProcessVoice`: Single audio request processing
+- `StreamVoice`: Streaming audio processing
+- `GetConversationHistory`: Retrieve conversation history
+
+## 🤝 Contributing
+
+1. Fork the repository
+2. Create a feature branch
+3. Make changes and test thoroughly
+4. Submit a pull request
+
+## 📄 License
+
+This project is open source. Please check individual component licenses for Google Cloud, OpenAI, and Supabase services.
+
+## 🆘 Support
+
+Need help? Try these steps:
+
+1. **Check this README** for common solutions
+2. **Run diagnostics**: `python test_supabase.py`
+3. **Enable debug mode**: Set `DEBUG=1` in `.env`
+4. **Check logs** for detailed error messages
+5. **Verify all credentials** are correctly set
+
+For issues and questions, ensure all dependencies are properly installed and environment variables are correctly configured.
+
+---
+
+🎉 **Ready to go!** Your Voice Assistant with Supabase is now set up and ready for use!
