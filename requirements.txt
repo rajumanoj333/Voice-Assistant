@@ -10,18 +10,15 @@ openai>=1.0.0
 python-dotenv>=1.0.0
 pydantic>=2.0.0
 
-# Networking and communication
-websockets>=11.0.0
-requests>=2.31.0
-
-# Database
+# Database - Choose one based on your setup
+# For Supabase
+supabase>=2.3.0
+# For PostgreSQL
 sqlalchemy>=2.0.0
 psycopg2-binary>=2.9.0
-supabase>=2.3.0
 
 # Audio processing and ML
 numpy>=1.24.0
-scipy>=1.11.0
 torch>=2.0.0
 torchaudio>=2.0.0
 
@@ -37,5 +34,6 @@ protobuf>=4.24.0
 # File handling
 aiofiles>=23.0.0
 
-# Utilities
-uuid>=1.30
+# Networking
+websockets>=11.0.0
+requests>=2.31.0

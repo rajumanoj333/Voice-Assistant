@@ -6,11 +6,8 @@ Integrates SileroVAD, Google Cloud STT/TTS, LLM processing, and database storage
 
 import grpc
 from concurrent import futures
-import asyncio
 import uuid
-from datetime import datetime
 import logging
-from typing import Optional, List
 import io
 
 # Import generated protobuf classes
@@ -23,12 +20,7 @@ from google_services import google_services
 from llm_processor import llm_processor
 
 # Import database services
-try:
-    from models import conversation_service, session_service
-    DATABASE_AVAILABLE = True
-except ImportError:
-    print("Database models not available - running without database")
-    DATABASE_AVAILABLE = False
+from models import conversation_service, session_service
 
 # Setup logging
 logging.basicConfig(level=logging.INFO)
@@ -83,100 +75,62 @@ class VoiceAssistantServicer(voice_assistant_pb2_grpc.VoiceAssistantServicer):
             logger.info(f"Transcribed text: {transcribed_text}")
             
             # Step 4: Get conversation history for context
-            db = SessionLocal()
-            try:
-                conversation_history = db.query(ConversationRecord).filter(
-                    ConversationRecord.user_id == request.user_id,
-                    ConversationRecord.session_id == request.session_id
-                ).order_by(ConversationRecord.timestamp.desc()).limit(5).all()
-                
-                # Step 5: Process with LLM
-                llm_response = llm_processor.process_text(
-                    transcribed_text, 
-                    request.user_id, 
-                    request.session_id,
-                    conversation_history
-                )
-                
-                if not llm_response:
-                    llm_response = "I'm sorry, I couldn't process your request."
-                
-                logger.info(f"LLM response: {llm_response}")
-                
-                # Step 6: Text-to-Speech using Google Cloud TTS
-                response_audio = google_services.text_to_speech(llm_response)
-                if not response_audio:
-                    return voice_assistant_pb2.AudioResponse(
-                        success=False,
-                        error_message="Failed to generate speech response",
-                        session_id=request.session_id,
-                        text_response=llm_response,
-                        transcribed_text=transcribed_text
-                    )
-                
-                # Step 7: Save to database (both audio and text)
-                conversation_record = ConversationRecord(
-                    id=str(uuid.uuid4()),
-                    user_id=request.user_id,
-                    session_id=request.session_id,
-                    audio_input=request.audio_data,
-                    text_input=transcribed_text,
-                    text_response=llm_response,
-                    audio_response=response_audio,
-                    timestamp=datetime.utcnow(),
-                    sample_rate=request.sample_rate,
-                    audio_format=voice_assistant_pb2.AudioFormat.Name(request.format).lower()
-                )
-                
-                db.add(conversation_record)
-                
-                # Update session activity
-                session = db.query(UserSession).filter(
-                    UserSession.session_id == request.session_id
-                ).first()
-                
-                if session:
-                    session.last_activity = datetime.utcnow()
-                else:
-                    new_session = UserSession(
-                        session_id=request.session_id,
-                        user_id=request.user_id,
-                        created_at=datetime.utcnow(),
-                        last_activity=datetime.utcnow(),
-                        is_active=1
-                    )
-                    db.add(new_session)
-                
-                db.commit()
-                
-                # Step 8: Return complete response
+            conversation_history = conversation_service.get_conversation_history(
+                request.user_id, 
+                request.session_id, 
+                limit=5
+            )
+            
+            # Step 5: Process with LLM
+            llm_response = llm_processor.process_text(
+                transcribed_text, 
+                request.user_id, 
+                request.session_id,
+                conversation_history
+            )
+            
+            if not llm_response:
+                llm_response = "I'm sorry, I couldn't process your request."
+            
+            logger.info(f"LLM response: {llm_response}")
+            
+            # Step 6: Text-to-Speech using Google Cloud TTS
+            response_audio = google_services.text_to_speech(llm_response)
+            if not response_audio:
                 return voice_assistant_pb2.AudioResponse(
-                    audio_data=response_audio,
+                    success=False,
+                    error_message="Failed to generate speech response",
+                    session_id=request.session_id,
                     text_response=llm_response,
-                    transcribed_text=transcribed_text,
-                    session_id=request.session_id,
-                    format=request.format,
-                    sample_rate=request.sample_rate,
-                    success=True
+                    transcribed_text=transcribed_text
                 )
-                
-            except Exception as db_error:
-                db.rollback()
-                logger.error(f"Database error: {db_error}")
-                # Still return the response even if DB save fails
-                return voice_assistant_pb2.AudioResponse(
-                    audio_data=response_audio if 'response_audio' in locals() else b"",
-                    text_response=llm_response if 'llm_response' in locals() else "Database error occurred",
-                    transcribed_text=transcribed_text if 'transcribed_text' in locals() else "",
-                    session_id=request.session_id,
-                    format=request.format,
-                    sample_rate=request.sample_rate,
-                    success=True,
-                    error_message=f"Response generated but database save failed: {str(db_error)}"
-                )
-            finally:
-                db.close()
-                
+            
+            # Step 7: Save to database using services
+            conversation_service.create_conversation_record(
+                user_id=request.user_id,
+                session_id=request.session_id,
+                audio_input=request.audio_data,
+                text_input=transcribed_text,
+                text_response=llm_response,
+                audio_response=response_audio,
+                sample_rate=request.sample_rate,
+                audio_format=voice_assistant_pb2.AudioFormat.Name(request.format).lower()
+            )
+            
+            # Create or update session
+            session_service.create_user_session(request.session_id, request.user_id)
+            session_service.update_session_activity(request.session_id)
+            
+            # Step 8: Return complete response
+            return voice_assistant_pb2.AudioResponse(
+                audio_data=response_audio,
+                text_response=llm_response,
+                transcribed_text=transcribed_text,
+                session_id=request.session_id,
+                format=request.format,
+                sample_rate=request.sample_rate,
+                success=True
+            )                
         except Exception as e:
             logger.error(f"Error in ProcessVoice: {e}")
             return voice_assistant_pb2.AudioResponse(
@@ -266,39 +220,36 @@ class VoiceAssistantServicer(voice_assistant_pb2_grpc.VoiceAssistantServicer):
         Retrieve conversation history for a user/session
         """
         try:
-            db = SessionLocal()
-            try:
-                query = db.query(ConversationRecord)
+            # Apply limit
+            limit = request.limit if request.limit > 0 else 10
+            
+            # Get records using conversation service
+            records = conversation_service.get_conversation_history(
+                request.user_id, 
+                request.session_id, 
+                limit
+            )
+            
+            # Convert to protobuf format
+            pb_records = []
+            for record in records:
+                # Handle audio data conversion
+                audio_input = bytes.fromhex(record.get('audio_input', '')) if record.get('audio_input') else b''
+                audio_response = bytes.fromhex(record.get('audio_response', '')) if record.get('audio_response') else b''
                 
-                if request.user_id:
-                    query = query.filter(ConversationRecord.user_id == request.user_id)
-                
-                if request.session_id:
-                    query = query.filter(ConversationRecord.session_id == request.session_id)
-                
-                # Apply limit
-                limit = request.limit if request.limit > 0 else 10
-                records = query.order_by(ConversationRecord.timestamp.desc()).limit(limit).all()
-                
-                # Convert to protobuf format
-                pb_records = []
-                for record in records:
-                    pb_record = voice_assistant_pb2.ConversationRecord(
-                        id=record.id,
-                        user_id=record.user_id,
-                        session_id=record.session_id,
-                        audio_input=record.audio_input,
-                        text_input=record.text_input,
-                        text_response=record.text_response,
-                        audio_response=record.audio_response,
-                        timestamp=int(record.timestamp.timestamp())
-                    )
-                    pb_records.append(pb_record)
-                
-                return voice_assistant_pb2.HistoryResponse(records=pb_records)
-                
-            finally:
-                db.close()
+                pb_record = voice_assistant_pb2.ConversationRecord(
+                    id=record['id'],
+                    user_id=record['user_id'],
+                    session_id=record['session_id'],
+                    audio_input=audio_input,
+                    text_input=record['text_input'],
+                    text_response=record['text_response'],
+                    audio_response=audio_response,
+                    timestamp=int(record['timestamp']) if isinstance(record['timestamp'], (int, float)) else 0
+                )
+                pb_records.append(pb_record)
+            
+            return voice_assistant_pb2.HistoryResponse(records=pb_records)
                 
         except Exception as e:
             logger.error(f"Error in GetConversationHistory: {e}")
