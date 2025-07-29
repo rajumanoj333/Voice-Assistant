@@ -1,12 +1,40 @@
+# Core web framework
 fastapi>=0.100.0
 uvicorn[standard]>=0.24.0
 python-multipart>=0.0.6
+
+# AI and LLM
 openai>=1.0.0
+
+# Environment and configuration
 python-dotenv>=1.0.0
 pydantic>=2.0.0
+
+# Networking and communication
 websockets>=11.0.0
+requests>=2.31.0
+
+# Database
 sqlalchemy>=2.0.0
+psycopg2-binary>=2.9.0
+
+# Audio processing and ML
 numpy>=1.24.0
 scipy>=1.11.0
-requests>=2.31.0
+torch>=2.0.0
+torchaudio>=2.0.0
+
+# Google Cloud services
+google-cloud-speech>=2.21.0
+google-cloud-texttospeech>=2.16.0
+
+# gRPC and protobuf
+grpcio>=1.59.0
+grpcio-tools>=1.59.0
+protobuf>=4.24.0
+
+# File handling
 aiofiles>=23.0.0
+
+# Utilities
+uuid>=1.30
