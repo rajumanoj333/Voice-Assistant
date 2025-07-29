@@ -1,0 +1,63 @@
+syntax = "proto3";
+
+package voice_assistant;
+
+service VoiceAssistant {
+    rpc ProcessVoice(AudioRequest) returns (AudioResponse);
+    rpc StreamVoice(stream AudioChunk) returns (stream AudioChunk);
+    rpc GetConversationHistory(HistoryRequest) returns (HistoryResponse);
+}
+
+message AudioRequest {
+    bytes audio_data = 1;
+    string session_id = 2;
+    AudioFormat format = 3;
+    int32 sample_rate = 4;
+    string user_id = 5;
+}
+
+message AudioResponse {
+    bytes audio_data = 1;
+    string text_response = 2;
+    string transcribed_text = 3;
+    string session_id = 4;
+    AudioFormat format = 5;
+    int32 sample_rate = 6;
+    bool success = 7;
+    string error_message = 8;
+}
+
+message AudioChunk {
+    bytes chunk_data = 1;
+    string session_id = 2;
+    bool is_final = 3;
+    int32 sequence_number = 4;
+}
+
+message HistoryRequest {
+    string user_id = 1;
+    string session_id = 2;
+    int32 limit = 3;
+}
+
+message HistoryResponse {
+    repeated ConversationRecord records = 1;
+}
+
+message ConversationRecord {
+    string id = 1;
+    string user_id = 2;
+    string session_id = 3;
+    bytes audio_input = 4;
+    string text_input = 5;
+    string text_response = 6;
+    bytes audio_response = 7;
+    int64 timestamp = 8;
+}
+
+enum AudioFormat {
+    WAV = 0;
+    MP3 = 1;
+    FLAC = 2;
+    OGG = 3;
+}
