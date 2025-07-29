@@ -21,7 +21,14 @@ import voice_assistant_pb2_grpc
 from vad_processor import vad_processor
 from google_services import google_services
 from llm_processor import llm_processor
-from models import SessionLocal, ConversationRecord, UserSession
+
+# Import database services
+try:
+    from models import conversation_service, session_service
+    DATABASE_AVAILABLE = True
+except ImportError:
+    print("Database models not available - running without database")
+    DATABASE_AVAILABLE = False
 
 # Setup logging
 logging.basicConfig(level=logging.INFO)
