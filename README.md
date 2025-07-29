@@ -168,6 +168,22 @@ Run the comprehensive client demo:
 python3 client_example.py
 ```
 
+## 🎨 Streamlit Frontend (New)
+
+You can now use a web-based UI for voice/text chat!
+
+### Start the Streamlit App
+
+```bash
+streamlit run streamlit_app.py
+```
+
+- Upload or record your voice, or type a message.
+- The assistant will transcribe, process, and reply with both text and audio.
+- All processing uses Google Cloud and OpenAI as before.
+
+The app runs at: http://localhost:8501
+
 ## 🧪 Testing & Verification
 
 ### Quick Health Check
