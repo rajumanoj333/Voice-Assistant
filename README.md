@@ -434,3 +434,35 @@ For issues and questions, ensure all dependencies are properly installed and env
 ---
 
 🎉 **Ready to go!** Your Voice Assistant with Supabase is now set up and ready for use!
+
+# Frontend (React PWA)
+
+A modern web frontend is included in the `frontend/` directory. It allows users to:
+- Record or upload audio
+- Send audio to the backend for processing (Google Cloud STT, LLM, TTS)
+- Play back the LLM's audio response
+
+## Running the Frontend
+
+1. Install dependencies:
+   ```bash
+   cd frontend
+   npm install
+   ```
+2. Start the development server:
+   ```bash
+   npm start
+   ```
+   The app will run at http://localhost:3000 by default.
+
+3. Configure the backend endpoint:
+   - By default, the frontend expects the backend at `http://localhost:8000/api/voice`.
+   - You can override this by setting the `REACT_APP_BACKEND_URL` environment variable in a `.env` file in the `frontend/` directory.
+
+## Google Cloud Setup
+- The backend requires Google Cloud credentials for Speech-to-Text and Text-to-Speech.
+- Ensure the backend has access to a service account with the appropriate permissions and the environment variable `GOOGLE_APPLICATION_CREDENTIALS` is set.
+
+## Notes
+- The backend must expose a REST endpoint `/api/voice` that accepts audio (WAV) and returns audio (WAV) as a response.
+- If your backend only supports gRPC, consider adding a REST/gRPC-web proxy (e.g., using FastAPI or grpc-gateway).
