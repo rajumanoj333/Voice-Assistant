@@ -204,19 +204,28 @@ To enable Google Cloud Services:
             if response.results:
                 # Get the first result with highest confidence
                 result = response.results[0]
+                
+                # Safely access alternatives and confidence
+                if not result.alternatives:
+                    error_msg = "No transcription alternatives available"
+                    logger.error(f"❌ {error_msg}")
+                    return None, {"error": error_msg, "alternatives": "empty"}
+                
                 transcript = result.alternatives[0].transcript
-                confidence = result.alternatives[0].confidence
+                # Confidence might not always be available, so we check for it
+                confidence = getattr(result.alternatives[0], 'confidence', None)
                 
                 metadata = {
                     "confidence": confidence,
                     "language_code": language_code,
                     "audio_size_bytes": len(audio_bytes),
                     "processing_time": datetime.now().isoformat(),
-                    "is_final": result.is_final,
+                    "is_final": True,  # Regular recognize() results are always final
                     "alternatives": len(result.alternatives)
                 }
                 
-                logger.info(f"✅ Transcription successful (confidence: {confidence:.2f}): {transcript}")
+                confidence_str = f"{confidence:.2f}" if confidence is not None else "unknown"
+                logger.info(f"✅ Transcription successful (confidence: {confidence_str}): {transcript}")
                 return transcript.strip(), metadata
             
             else:
@@ -319,8 +328,13 @@ To enable Google Cloud Services:
             
             for response in responses:
                 for result in response.results:
+                    # Safely access alternatives
+                    if not result.alternatives:
+                        continue
+                    
                     transcript = result.alternatives[0].transcript
-                    confidence = result.alternatives[0].confidence
+                    # Confidence might not always be available in streaming
+                    confidence = getattr(result.alternatives[0], 'confidence', None)
                     
                     metadata = {
                         "confidence": confidence,
