@@ -1,47 +1,47 @@
 # Core web framework
-fastapi>=0.100.0
-uvicorn[standard]>=0.24.0
-python-multipart>=0.0.6
+fastapi>=0.116.1
+uvicorn[standard]>=0.35.0
+python-multipart>=0.0.20
 
 # AI and LLM
-openai>=1.0.0
+openai>=1.97.1
 
 # Environment and configuration
-python-dotenv>=1.0.0
-pydantic>=2.0.0
+python-dotenv>=1.1.1
+pydantic>=2.11.7
 
 # Database - Choose one based on your setup
 # For Supabase
-supabase>=2.3.0
+supabase>=2.17.0
 # For PostgreSQL
-sqlalchemy>=2.0.0
-psycopg2-binary>=2.9.0
+sqlalchemy>=2.0.41
+psycopg2-binary>=2.9.10
 
 # Audio processing and ML
-numpy>=1.24.0
-torch>=2.0.0
-torchaudio>=2.0.0
+numpy>=2.3.2
+torch>=2.7.1
+torchaudio>=2.7.1
 
 # Google Cloud services
-google-cloud-speech>=2.21.0
-google-cloud-texttospeech>=2.16.0
+google-cloud-speech>=2.33.0
+google-cloud-texttospeech>=2.27.0
 
 # gRPC and protobuf
-grpcio>=1.59.0
-grpcio-tools>=1.59.0
-protobuf>=4.24.0
+grpcio>=1.74.0
+grpcio-tools>=1.74.0
+protobuf>=6.31.1
 
 # File handling
-aiofiles>=23.0.0
+aiofiles>=24.1.0
 
 # Networking
-websockets>=11.0.0
-requests>=2.31.0
+websockets>=15.0.1
+requests>=2.31.0        # added (was missing)
 
 # Streamlit and UI
-streamlit>=1.30.0
-soundfile>=0.12.1
-streamlit-audio-recorder>=0.1.5
+streamlit>=1.47.1
+soundfile>=0.13.1
+streamlit-audio-recorder>=0.1.5   # added (was missing)
 
 # Additional utilities
-python-dateutil>=2.8.2
+python-dateutil>=2.8.2   # added (was missing)
