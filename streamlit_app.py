@@ -21,6 +21,15 @@ except Exception as e:
     LLM_AVAILABLE = False
     llm_processor = None
 
+# Import the new log service
+try:
+    from models import conversation_log_service
+    LOG_SERVICE_AVAILABLE = True
+except Exception as e:
+    st.error(f"❌ Failed to load Conversation Log Service: {e}")
+    LOG_SERVICE_AVAILABLE = False
+    conversation_log_service = None
+
 # Page configuration
 st.set_page_config(
     page_title="Voice Assistant", 
@@ -373,3 +382,55 @@ st.markdown("""
     </ul>
 </div>
 """, unsafe_allow_html=True)
+
+# Process input and save to log
+if st.button("Submit"):
+    audio_type = None
+    audio_transcription = None
+    llm_response = None
+    if audio_file is not None:
+        audio_type = audio_file.type.split("/")[-1]
+        audio_bytes = audio_file.read()
+        if GOOGLE_SERVICES_AVAILABLE and google_services:
+            audio_transcription = google_services.transcribe_audio(audio_bytes, audio_type)
+        else:
+            st.error("Google Speech-to-Text not available.")
+    elif recorded_audio is not None:
+        audio_type = "wav"
+        audio_bytes = recorded_audio
+        if GOOGLE_SERVICES_AVAILABLE and google_services:
+            audio_transcription = google_services.transcribe_audio(audio_bytes, audio_type)
+        else:
+            st.error("Google Speech-to-Text not available.")
+    elif user_text:
+        audio_type = "text"
+        audio_transcription = user_text
+    else:
+        st.warning("Please provide audio or text input.")
+
+    if audio_transcription:
+        if LLM_AVAILABLE and llm_processor:
+            llm_response = llm_processor.process_text(audio_transcription)
+        else:
+            st.error("LLM processor not available.")
+
+        if LOG_SERVICE_AVAILABLE and conversation_log_service:
+            log = conversation_log_service.create_conversation_log(
+                audio_type=audio_type,
+                audio_transcription=audio_transcription,
+                llm_response=llm_response
+            )
+            if log:
+                st.success(f"Log saved! ID: {log['id']}")
+            else:
+                st.error("Failed to save log.")
+
+# Display recent logs
+if LOG_SERVICE_AVAILABLE and conversation_log_service:
+    st.subheader("🗂 Recent Conversation Logs")
+    logs = conversation_log_service.get_conversation_logs(limit=10)
+    for log in logs:
+        st.markdown(f"**[{log['timestamp']}]** *({log['audio_type']})*  ")
+        st.markdown(f"- **Transcription:** {log['audio_transcription']}")
+        st.markdown(f"- **LLM Response:** {log['llm_response']}")
+        st.markdown("---")
