@@ -67,7 +67,7 @@ class GoogleCloudServices:
             # Configure text-to-speech
             self.tts_voice = texttospeech.VoiceSelectionParams(
                 language_code="en-US",
-                ssml_gender=texttospeech.SsmlVoiceGender.FEMALE,
+                ssml_gender=texttospeech.SsmlVoiceGender.MALE,
                 name="en-US-Neural2-D"  # High quality neural voice
             )
             
@@ -265,10 +265,12 @@ To enable Google Cloud Services:
             # Configure voice if specified
             voice = self.tts_voice
             if voice_name or language_code != "en-US":
+                # Use female voice name for female gender
+                default_voice_name = f"{language_code}-Neural2-F" if language_code.startswith("en") else f"{language_code}-Neural2-D"
                 voice = texttospeech.VoiceSelectionParams(
                     language_code=language_code,
                     ssml_gender=texttospeech.SsmlVoiceGender.FEMALE,
-                    name=voice_name or f"{language_code}-Neural2-D"
+                    name=voice_name or default_voice_name
                 )
             
             logger.info(f"🔊 Synthesizing speech (language: {language_code}, text length: {len(text)} chars)")
