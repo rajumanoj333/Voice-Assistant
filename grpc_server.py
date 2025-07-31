@@ -9,6 +9,7 @@ from concurrent import futures
 import uuid
 import logging
 import io
+from datetime import datetime
 
 # Import generated protobuf classes
 import voice_assistant_pb2
@@ -20,7 +21,7 @@ from google_services import google_services
 from llm_processor import llm_processor
 
 # Import database services
-from models import conversation_service, session_service
+from models import conversation_service, session_service, voice_interaction_service
 
 # Setup logging
 logging.basicConfig(level=logging.INFO)
@@ -116,6 +117,22 @@ class VoiceAssistantServicer(voice_assistant_pb2_grpc.VoiceAssistantServicer):
                 sample_rate=request.sample_rate,
                 audio_format=voice_assistant_pb2.AudioFormat.Name(request.format).lower()
             )
+            
+            # Step 7.5: Save voice interaction (if audio file URL is available)
+            # Note: In a real implementation, you would upload the audio to Supabase Storage
+            # and get the URL. For now, we'll use a placeholder URL
+            try:
+                # Generate a placeholder audio file URL
+                audio_file_url = f"https://supabase.com/storage/v1/object/public/audio/{request.session_id}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.wav"
+                
+                voice_interaction_service.create_voice_interaction(
+                    audio_file_url=audio_file_url,
+                    transcript=transcribed_text,
+                    llm_response=llm_response
+                )
+                logger.info(f"Voice interaction saved for session: {request.session_id}")
+            except Exception as e:
+                logger.warning(f"Failed to save voice interaction: {e}")
             
             # Create or update session
             session_service.create_user_session(request.session_id, request.user_id)
