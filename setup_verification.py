@@ -151,7 +151,7 @@ class SetupVerifier:
         """Check if all required project files exist"""
         required_files = [
             'main.py', 'grpc_server.py', 'client_example.py', 'models.py',
-            'supabase_client.py', 'test_supabase.py', 'test_voice_interactions.py', 'supabase_schema.sql',
+            'supabase_client.py', 'test_supabase.py', 'test_voice_interactions.py', 'test_database_connections.py', 'supabase_schema.sql',
             'requirements.txt', '.env', 'voice_assistant.proto'
         ]
         

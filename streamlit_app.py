@@ -21,6 +21,17 @@ except Exception as e:
     LLM_AVAILABLE = False
     llm_processor = None
 
+# Import database services
+try:
+    from models import voice_interaction_service, conversation_service, session_service
+    DATABASE_AVAILABLE = True
+except Exception as e:
+    st.error(f"❌ Failed to load database services: {e}")
+    DATABASE_AVAILABLE = False
+    voice_interaction_service = None
+    conversation_service = None
+    session_service = None
+
 # Page configuration
 st.set_page_config(
     page_title="Voice Assistant", 
@@ -341,6 +352,94 @@ if submit_text and user_text.strip():
             st.error("❌ LLM processor not available")
         
         status.update(label="Processing complete!", state="complete")
+
+# Database Operations Section
+if DATABASE_AVAILABLE:
+    st.header("💾 Database Operations")
+    
+    # Create tabs for different database operations
+    db_tab1, db_tab2, db_tab3 = st.tabs(["Voice Interactions", "Conversation History", "Sessions"])
+    
+    with db_tab1:
+        st.subheader("Voice Interactions")
+        
+        # Get voice interactions
+        if st.button("📋 Get Voice Interactions"):
+            interactions_result = voice_interaction_service.get_voice_interactions(limit=10)
+            if interactions_result:
+                st.success(f"✅ Retrieved {len(interactions_result)} voice interactions")
+                for i, interaction in enumerate(interactions_result):
+                    with st.expander(f"Interaction {i+1}: {interaction['id'][:8]}..."):
+                        st.write(f"**Audio URL:** {interaction['audio_file_url']}")
+                        st.write(f"**Transcript:** {interaction['transcript']}")
+                        st.write(f"**LLM Response:** {interaction['llm_response'][:100]}...")
+                        st.write(f"**Created:** {interaction['created_at']}")
+            else:
+                st.warning("No voice interactions found")
+        
+        # Create test voice interaction
+        if st.button("➕ Create Test Voice Interaction"):
+            test_interaction = voice_interaction_service.create_voice_interaction(
+                audio_file_url="https://test.com/audio.wav",
+                transcript="Test transcript from Streamlit",
+                llm_response="Test response from Streamlit"
+            )
+            if test_interaction:
+                st.success(f"✅ Created test interaction: {test_interaction['id']}")
+            else:
+                st.error("❌ Failed to create test interaction")
+    
+    with db_tab2:
+        st.subheader("Conversation History")
+        
+        # Get conversation history
+        user_id = st.text_input("User ID", value="streamlit_user")
+        session_id = st.text_input("Session ID (optional)", value="")
+        limit = st.slider("Limit", min_value=1, max_value=50, value=10)
+        
+        if st.button("📋 Get Conversation History"):
+            history = conversation_service.get_conversation_history(user_id, session_id, limit)
+            if history:
+                st.success(f"✅ Retrieved {len(history)} conversation records")
+                for i, record in enumerate(history):
+                    with st.expander(f"Record {i+1}: {record['id'][:8]}..."):
+                        st.write(f"**User ID:** {record['user_id']}")
+                        st.write(f"**Session ID:** {record['session_id']}")
+                        st.write(f"**Text Input:** {record['text_input']}")
+                        st.write(f"**Text Response:** {record['text_response']}")
+                        st.write(f"**Created:** {record['timestamp']}")
+            else:
+                st.warning("No conversation history found")
+    
+    with db_tab3:
+        st.subheader("User Sessions")
+        
+        # Create test session
+        if st.button("➕ Create Test Session"):
+            test_session_id = f"test_session_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
+            test_user_id = "streamlit_user"
+            
+            session_result = session_service.create_user_session(test_session_id, test_user_id)
+            if session_result:
+                st.success(f"✅ Created session: {test_session_id}")
+            else:
+                st.error("❌ Failed to create session")
+        
+        # Get session info
+        session_id_to_check = st.text_input("Session ID to check", value="")
+        if st.button("🔍 Check Session"):
+            if session_id_to_check:
+                session = session_service.get_user_session(session_id_to_check)
+                if session:
+                    st.success(f"✅ Session found: {session['session_id']}")
+                    st.write(f"**User ID:** {session['user_id']}")
+                    st.write(f"**Created:** {session['created_at']}")
+                    st.write(f"**Last Activity:** {session['last_activity']}")
+                    st.write(f"**Active:** {session['is_active']}")
+                else:
+                    st.warning("Session not found")
+            else:
+                st.warning("Please enter a session ID")
 
 # Display conversation history
 st.header("📝 Conversation History")
