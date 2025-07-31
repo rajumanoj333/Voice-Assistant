@@ -42,6 +42,15 @@ class UserSession(Base):
     last_activity = Column(DateTime, default=datetime.utcnow)
     is_active = Column(Integer, default=1)
 
+class VoiceInteraction(Base):
+    __tablename__ = 'voice_interactions'
+    
+    id = Column(String, primary_key=True)
+    audio_file_url = Column(Text, nullable=False)
+    transcript = Column(Text, nullable=False)
+    llm_response = Column(Text, nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
 # Database configuration for PostgreSQL (fallback)
 DATABASE_URL = os.getenv('DATABASE_URL', 'postgresql://user:password@localhost/voice_assistant')
 
@@ -285,6 +294,141 @@ class SessionService:
             finally:
                 db.close()
 
+class VoiceInteractionService:
+    """Service class for voice interaction operations"""
+    
+    def __init__(self):
+        self.use_supabase = SUPABASE_AVAILABLE
+    
+    def create_voice_interaction(self, audio_file_url: str, transcript: str, llm_response: str) -> Optional[Dict[str, Any]]:
+        """Create a new voice interaction"""
+        if self.use_supabase:
+            interaction_data = {
+                'audio_file_url': audio_file_url,
+                'transcript': transcript,
+                'llm_response': llm_response,
+                'created_at': datetime.utcnow().isoformat()
+            }
+            return supabase_client.create_voice_interaction(interaction_data)
+        else:
+            # Fallback to PostgreSQL
+            db = SessionLocal()
+            try:
+                interaction = VoiceInteraction(
+                    id=str(uuid.uuid4()),
+                    audio_file_url=audio_file_url,
+                    transcript=transcript,
+                    llm_response=llm_response
+                )
+                db.add(interaction)
+                db.commit()
+                db.refresh(interaction)
+                return {
+                    'id': interaction.id,
+                    'audio_file_url': interaction.audio_file_url,
+                    'transcript': interaction.transcript,
+                    'llm_response': interaction.llm_response,
+                    'created_at': interaction.created_at.isoformat() if interaction.created_at else None
+                }
+            except Exception as e:
+                db.rollback()
+                print(f"Error creating voice interaction: {e}")
+                return None
+            finally:
+                db.close()
+    
+    def get_voice_interaction(self, interaction_id: str) -> Optional[Dict[str, Any]]:
+        """Get a voice interaction by ID"""
+        if self.use_supabase:
+            return supabase_client.get_voice_interaction(interaction_id)
+        else:
+            # Fallback to PostgreSQL
+            db = SessionLocal()
+            try:
+                interaction = db.query(VoiceInteraction).filter(VoiceInteraction.id == interaction_id).first()
+                if interaction:
+                    return {
+                        'id': interaction.id,
+                        'audio_file_url': interaction.audio_file_url,
+                        'transcript': interaction.transcript,
+                        'llm_response': interaction.llm_response,
+                        'created_at': interaction.created_at.isoformat() if interaction.created_at else None
+                    }
+                return None
+            finally:
+                db.close()
+    
+    def get_voice_interactions(self, limit: int = 50, offset: int = 0) -> List[Dict[str, Any]]:
+        """Get voice interactions with pagination"""
+        if self.use_supabase:
+            return supabase_client.get_voice_interactions(limit, offset)
+        else:
+            # Fallback to PostgreSQL
+            db = SessionLocal()
+            try:
+                interactions = db.query(VoiceInteraction).order_by(VoiceInteraction.created_at.desc()).offset(offset).limit(limit).all()
+                return [{
+                    'id': interaction.id,
+                    'audio_file_url': interaction.audio_file_url,
+                    'transcript': interaction.transcript,
+                    'llm_response': interaction.llm_response,
+                    'created_at': interaction.created_at.isoformat() if interaction.created_at else None
+                } for interaction in interactions]
+            finally:
+                db.close()
+    
+    def update_voice_interaction(self, interaction_id: str, updates: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+        """Update a voice interaction"""
+        if self.use_supabase:
+            return supabase_client.update_voice_interaction(interaction_id, updates)
+        else:
+            # Fallback to PostgreSQL
+            db = SessionLocal()
+            try:
+                interaction = db.query(VoiceInteraction).filter(VoiceInteraction.id == interaction_id).first()
+                if interaction:
+                    for key, value in updates.items():
+                        if hasattr(interaction, key):
+                            setattr(interaction, key, value)
+                    db.commit()
+                    db.refresh(interaction)
+                    return {
+                        'id': interaction.id,
+                        'audio_file_url': interaction.audio_file_url,
+                        'transcript': interaction.transcript,
+                        'llm_response': interaction.llm_response,
+                        'created_at': interaction.created_at.isoformat() if interaction.created_at else None
+                    }
+                return None
+            except Exception as e:
+                db.rollback()
+                print(f"Error updating voice interaction: {e}")
+                return None
+            finally:
+                db.close()
+    
+    def delete_voice_interaction(self, interaction_id: str) -> bool:
+        """Delete a voice interaction"""
+        if self.use_supabase:
+            return supabase_client.delete_voice_interaction(interaction_id)
+        else:
+            # Fallback to PostgreSQL
+            db = SessionLocal()
+            try:
+                interaction = db.query(VoiceInteraction).filter(VoiceInteraction.id == interaction_id).first()
+                if interaction:
+                    db.delete(interaction)
+                    db.commit()
+                    return True
+                return False
+            except Exception as e:
+                db.rollback()
+                print(f"Error deleting voice interaction: {e}")
+                return False
+            finally:
+                db.close()
+
 # Global service instances
 conversation_service = ConversationService()
 session_service = SessionService()
+voice_interaction_service = VoiceInteractionService()

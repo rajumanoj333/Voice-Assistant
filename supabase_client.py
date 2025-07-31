@@ -123,6 +123,52 @@ class SupabaseClient:
             print(f"Error deactivating session: {e}")
             return False
     
+    # Voice Interactions Operations
+    def create_voice_interaction(self, interaction_data: Dict[str, Any]) -> Dict[str, Any]:
+        """Create a new voice interaction"""
+        try:
+            result = self.client.table('voice_interactions').insert(interaction_data).execute()
+            return result.data[0] if result.data else None
+        except Exception as e:
+            print(f"Error creating voice interaction: {e}")
+            raise
+    
+    def get_voice_interaction(self, interaction_id: str) -> Optional[Dict[str, Any]]:
+        """Get a voice interaction by ID"""
+        try:
+            result = self.client.table('voice_interactions').select("*").eq('id', interaction_id).execute()
+            return result.data[0] if result.data else None
+        except Exception as e:
+            print(f"Error getting voice interaction: {e}")
+            return None
+    
+    def get_voice_interactions(self, limit: int = 50, offset: int = 0) -> List[Dict[str, Any]]:
+        """Get voice interactions with pagination"""
+        try:
+            result = self.client.table('voice_interactions').select("*").order('created_at', desc=True).range(offset, offset + limit - 1).execute()
+            return result.data or []
+        except Exception as e:
+            print(f"Error getting voice interactions: {e}")
+            return []
+    
+    def update_voice_interaction(self, interaction_id: str, updates: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+        """Update a voice interaction"""
+        try:
+            result = self.client.table('voice_interactions').update(updates).eq('id', interaction_id).execute()
+            return result.data[0] if result.data else None
+        except Exception as e:
+            print(f"Error updating voice interaction: {e}")
+            return None
+    
+    def delete_voice_interaction(self, interaction_id: str) -> bool:
+        """Delete a voice interaction"""
+        try:
+            self.client.table('voice_interactions').delete().eq('id', interaction_id).execute()
+            return True
+        except Exception as e:
+            print(f"Error deleting voice interaction: {e}")
+            return False
+    
     # Utility methods
     def test_connection(self) -> bool:
         """Test the Supabase connection"""
