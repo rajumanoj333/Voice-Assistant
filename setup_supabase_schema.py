@@ -52,6 +52,15 @@ def check_tables_exist(supabase: Client):
     except Exception as e:
         tables_status['conversation_records'] = False
         print("❌ conversation_records table does not exist")
+    
+    # Test voice_interactions table
+    try:
+        result = supabase.table('voice_interactions').select('*').limit(1).execute()
+        tables_status['voice_interactions'] = True
+        print("✅ voice_interactions table exists")
+    except Exception as e:
+        tables_status['voice_interactions'] = False
+        print("❌ voice_interactions table does not exist")
         
     return tables_status
 
@@ -83,6 +92,7 @@ def show_setup_instructions():
     print("\n📁 The SQL file contains:")
     print("   ✓ user_sessions table - stores user session data")
     print("   ✓ conversation_records table - stores conversation history")
+    print("   ✓ voice_interactions table - stores voice interaction data")
     print("   ✓ RLS policies for security (with anonymous access for development)")
     print("   ✓ Indexes for performance optimization")
     

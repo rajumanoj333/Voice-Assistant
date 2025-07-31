@@ -24,16 +24,27 @@ CREATE TABLE IF NOT EXISTS user_sessions (
     is_active BOOLEAN DEFAULT TRUE
 );
 
+-- Create voice_interactions table
+CREATE TABLE IF NOT EXISTS voice_interactions (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    audio_file_url TEXT NOT NULL,         -- URL to the audio file in Supabase Storage
+    transcript TEXT NOT NULL,             -- Audio transcript
+    llm_response TEXT NOT NULL,           -- LLM response text
+    created_at TIMESTAMPTZ DEFAULT NOW()  -- Timestamp
+);
+
 -- Create indexes for better performance
 CREATE INDEX IF NOT EXISTS idx_conversation_records_user_id ON conversation_records(user_id);
 CREATE INDEX IF NOT EXISTS idx_conversation_records_session_id ON conversation_records(session_id);
 CREATE INDEX IF NOT EXISTS idx_conversation_records_timestamp ON conversation_records(timestamp DESC);
 CREATE INDEX IF NOT EXISTS idx_user_sessions_user_id ON user_sessions(user_id);
 CREATE INDEX IF NOT EXISTS idx_user_sessions_active ON user_sessions(is_active) WHERE is_active = TRUE;
+CREATE INDEX IF NOT EXISTS idx_voice_interactions_created_at ON voice_interactions(created_at DESC);
 
 -- Enable Row Level Security (RLS) for security
 ALTER TABLE conversation_records ENABLE ROW LEVEL SECURITY;
 ALTER TABLE user_sessions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE voice_interactions ENABLE ROW LEVEL SECURITY;
 
 -- Create policies for authenticated users
 -- Note: Adjust these policies based on your authentication setup
@@ -64,6 +75,19 @@ CREATE POLICY "Users can update their own sessions" ON user_sessions
 CREATE POLICY "Users can delete their own sessions" ON user_sessions
     FOR DELETE USING (auth.uid()::text = user_id);
 
+-- Policy for voice_interactions - users can only access their own interactions
+CREATE POLICY "Users can view their own voice interactions" ON voice_interactions
+    FOR SELECT USING (true); -- Allow all users to view for now
+
+CREATE POLICY "Users can insert their own voice interactions" ON voice_interactions
+    FOR INSERT WITH CHECK (true); -- Allow all users to insert for now
+
+CREATE POLICY "Users can update their own voice interactions" ON voice_interactions
+    FOR UPDATE USING (true); -- Allow all users to update for now
+
+CREATE POLICY "Users can delete their own voice interactions" ON voice_interactions
+    FOR DELETE USING (true); -- Allow all users to delete for now
+
 -- For development/testing: Allow anonymous access (remove in production)
 -- These policies allow anonymous access for testing - REMOVE IN PRODUCTION!
 
@@ -71,6 +95,9 @@ CREATE POLICY "Allow anonymous access to conversation_records" ON conversation_r
     FOR ALL USING (true);
 
 CREATE POLICY "Allow anonymous access to user_sessions" ON user_sessions
+    FOR ALL USING (true);
+
+CREATE POLICY "Allow anonymous access to voice_interactions" ON voice_interactions
     FOR ALL USING (true);
 
 -- Create a function to automatically update last_activity
