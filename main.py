@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 
 # Import database services
 try:
-    from models import create_tables, get_db, conversation_service, session_service
+    from models import create_tables, get_db, conversation_service, session_service, voice_interaction_service
     DATABASE_AVAILABLE = True
 except ImportError:
     logger.warning("Database models not available - running in demo mode")
@@ -471,6 +471,135 @@ async def test_services():
     
     return JSONResponse(test_results)
 
+# Voice Interactions Endpoints
+@app.post("/voice-interactions/")
+async def create_voice_interaction(
+    audio_file_url: str = Form(...),
+    transcript: str = Form(...),
+    llm_response: str = Form(...)
+):
+    """Create a new voice interaction"""
+    if not DATABASE_AVAILABLE:
+        raise HTTPException(status_code=503, detail="Database not available")
+    
+    try:
+        interaction = voice_interaction_service.create_voice_interaction(
+            audio_file_url=audio_file_url,
+            transcript=transcript,
+            llm_response=llm_response
+        )
+        
+        if interaction:
+            return JSONResponse({
+                "success": True,
+                "interaction": interaction,
+                "message": "Voice interaction created successfully"
+            })
+        else:
+            raise HTTPException(status_code=500, detail="Failed to create voice interaction")
+            
+    except Exception as e:
+        logger.error(f"Error creating voice interaction: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to create voice interaction: {str(e)}")
+
+@app.get("/voice-interactions/{interaction_id}")
+async def get_voice_interaction(interaction_id: str):
+    """Get a specific voice interaction by ID"""
+    if not DATABASE_AVAILABLE:
+        raise HTTPException(status_code=503, detail="Database not available")
+    
+    try:
+        interaction = voice_interaction_service.get_voice_interaction(interaction_id)
+        
+        if interaction:
+            return JSONResponse({
+                "success": True,
+                "interaction": interaction
+            })
+        else:
+            raise HTTPException(status_code=404, detail="Voice interaction not found")
+            
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error getting voice interaction: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to get voice interaction: {str(e)}")
+
+@app.get("/voice-interactions/")
+async def get_voice_interactions(limit: int = 50, offset: int = 0):
+    """Get all voice interactions with pagination"""
+    if not DATABASE_AVAILABLE:
+        raise HTTPException(status_code=503, detail="Database not available")
+    
+    try:
+        interactions = voice_interaction_service.get_voice_interactions(limit=limit, offset=offset)
+        
+        return JSONResponse({
+            "success": True,
+            "interactions": interactions,
+            "pagination": {
+                "limit": limit,
+                "offset": offset,
+                "count": len(interactions)
+            }
+        })
+        
+    except Exception as e:
+        logger.error(f"Error getting voice interactions: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to get voice interactions: {str(e)}")
+
+@app.put("/voice-interactions/{interaction_id}")
+async def update_voice_interaction(
+    interaction_id: str,
+    updates: dict = Body(...)
+):
+    """Update a voice interaction"""
+    if not DATABASE_AVAILABLE:
+        raise HTTPException(status_code=503, detail="Database not available")
+    
+    try:
+        updated_interaction = voice_interaction_service.update_voice_interaction(
+            interaction_id, updates
+        )
+        
+        if updated_interaction:
+            return JSONResponse({
+                "success": True,
+                "interaction": updated_interaction,
+                "message": "Voice interaction updated successfully"
+            })
+        else:
+            raise HTTPException(status_code=404, detail="Voice interaction not found")
+            
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error updating voice interaction: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to update voice interaction: {str(e)}")
+
+@app.delete("/voice-interactions/{interaction_id}")
+async def delete_voice_interaction(interaction_id: str):
+    """Delete a voice interaction"""
+    if not DATABASE_AVAILABLE:
+        raise HTTPException(status_code=503, detail="Database not available")
+    
+    try:
+        success = voice_interaction_service.delete_voice_interaction(interaction_id)
+        
+        if success:
+            return JSONResponse({
+                "success": True,
+                "message": "Voice interaction deleted successfully"
+            })
+        else:
+            raise HTTPException(status_code=404, detail="Voice interaction not found")
+            
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error deleting voice interaction: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to delete voice interaction: {str(e)}")
+
 @app.get("/")
 async def root():
     """Enhanced root endpoint with comprehensive information"""
@@ -486,7 +615,9 @@ async def root():
             "upload_audio": "/upload-audio/",
             "process_text": "/process-text/",
             "conversation_history": "/conversation-history/{user_id}",
-            "session": "/session/{session_id}"
+            "session": "/session/{session_id}",
+            "voice_interactions": "/voice-interactions/",
+            "voice_interaction": "/voice-interactions/{interaction_id}"
         },
         "services": {
             "database": "enabled" if DATABASE_AVAILABLE else "disabled",
@@ -499,6 +630,7 @@ async def root():
             "Text-to-Speech with Google Cloud",
             "LLM processing with OpenAI",
             "Conversation history storage",
+            "Voice interactions storage",
             "Real-time WebSocket support",
             "Enhanced error handling",
             "Comprehensive status monitoring"

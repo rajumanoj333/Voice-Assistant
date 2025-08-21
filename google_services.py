@@ -5,6 +5,14 @@ import io
 import json
 from datetime import datetime
 
+# Import database services
+try:
+    from models import voice_interaction_service, conversation_service, session_service
+    DATABASE_AVAILABLE = True
+except ImportError:
+    DATABASE_AVAILABLE = False
+    logger.warning("Database services not available")
+
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -406,6 +414,112 @@ To enable Google Cloud Services:
             test_results["overall_status"] = "failed"
         
         return test_results
+    
+    def save_voice_interaction(self, audio_file_url: str, transcript: str, llm_response: str) -> Dict[str, Any]:
+        """Save voice interaction to database"""
+        if not DATABASE_AVAILABLE:
+            logger.warning("Database not available - cannot save voice interaction")
+            return {"success": False, "error": "Database not available"}
+        
+        try:
+            interaction = voice_interaction_service.create_voice_interaction(
+                audio_file_url=audio_file_url,
+                transcript=transcript,
+                llm_response=llm_response
+            )
+            
+            if interaction:
+                logger.info(f"✅ Voice interaction saved successfully: {interaction['id']}")
+                return {"success": True, "interaction": interaction}
+            else:
+                logger.error("❌ Failed to save voice interaction")
+                return {"success": False, "error": "Failed to create interaction"}
+                
+        except Exception as e:
+            logger.error(f"❌ Error saving voice interaction: {e}")
+            return {"success": False, "error": str(e)}
+    
+    def save_conversation_record(self, user_id: str, session_id: str, 
+                                audio_input: bytes, text_input: str, 
+                                text_response: str, audio_response: bytes,
+                                sample_rate: int = 16000, audio_format: str = 'wav') -> Dict[str, Any]:
+        """Save conversation record to database"""
+        if not DATABASE_AVAILABLE:
+            logger.warning("Database not available - cannot save conversation record")
+            return {"success": False, "error": "Database not available"}
+        
+        try:
+            record = conversation_service.create_conversation_record(
+                user_id=user_id,
+                session_id=session_id,
+                audio_input=audio_input,
+                text_input=text_input,
+                text_response=text_response,
+                audio_response=audio_response,
+                sample_rate=sample_rate,
+                audio_format=audio_format
+            )
+            
+            if record:
+                logger.info(f"✅ Conversation record saved successfully: {record['id']}")
+                return {"success": True, "record": record}
+            else:
+                logger.error("❌ Failed to save conversation record")
+                return {"success": False, "error": "Failed to create record"}
+                
+        except Exception as e:
+            logger.error(f"❌ Error saving conversation record: {e}")
+            return {"success": False, "error": str(e)}
+    
+    def create_user_session(self, session_id: str, user_id: str) -> Dict[str, Any]:
+        """Create or update user session"""
+        if not DATABASE_AVAILABLE:
+            logger.warning("Database not available - cannot create session")
+            return {"success": False, "error": "Database not available"}
+        
+        try:
+            session = session_service.create_user_session(session_id, user_id)
+            
+            if session:
+                logger.info(f"✅ User session created/updated: {session_id}")
+                return {"success": True, "session": session}
+            else:
+                logger.error("❌ Failed to create user session")
+                return {"success": False, "error": "Failed to create session"}
+                
+        except Exception as e:
+            logger.error(f"❌ Error creating user session: {e}")
+            return {"success": False, "error": str(e)}
+    
+    def get_conversation_history(self, user_id: str, session_id: str = None, limit: int = 50) -> Dict[str, Any]:
+        """Get conversation history from database"""
+        if not DATABASE_AVAILABLE:
+            logger.warning("Database not available - cannot get conversation history")
+            return {"success": False, "error": "Database not available", "history": []}
+        
+        try:
+            history = conversation_service.get_conversation_history(user_id, session_id, limit)
+            logger.info(f"✅ Retrieved {len(history)} conversation records")
+            return {"success": True, "history": history}
+            
+        except Exception as e:
+            logger.error(f"❌ Error getting conversation history: {e}")
+            return {"success": False, "error": str(e), "history": []}
+    
+    def get_voice_interactions(self, limit: int = 50, offset: int = 0) -> Dict[str, Any]:
+        """Get voice interactions from database"""
+        if not DATABASE_AVAILABLE:
+            logger.warning("Database not available - cannot get voice interactions")
+            return {"success": False, "error": "Database not available", "interactions": []}
+        
+        try:
+            interactions = voice_interaction_service.get_voice_interactions(limit, offset)
+            logger.info(f"✅ Retrieved {len(interactions)} voice interactions")
+            return {"success": True, "interactions": interactions}
+            
+        except Exception as e:
+            logger.error(f"❌ Error getting voice interactions: {e}")
+            return {"success": False, "error": str(e), "interactions": []}
 
 # Singleton instance with enhanced error handling
 try:

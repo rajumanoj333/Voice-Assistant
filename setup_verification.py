@@ -132,7 +132,7 @@ class SetupVerifier:
             from supabase_client import supabase_client
             
             # Try to query each table
-            tables_to_check = ['conversation_records', 'user_sessions']
+            tables_to_check = ['conversation_records', 'user_sessions', 'voice_interactions']
             
             for table in tables_to_check:
                 try:
@@ -151,7 +151,7 @@ class SetupVerifier:
         """Check if all required project files exist"""
         required_files = [
             'main.py', 'grpc_server.py', 'client_example.py', 'models.py',
-            'supabase_client.py', 'test_supabase.py', 'supabase_schema.sql',
+            'supabase_client.py', 'test_supabase.py', 'test_voice_interactions.py', 'test_database_connections.py', 'supabase_schema.sql',
             'requirements.txt', '.env', 'voice_assistant.proto'
         ]
         
