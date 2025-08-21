@@ -387,7 +387,7 @@ async def health_check():
     
     return JSONResponse({
         "status": overall_status,
-        "timestamp": "2024-01-01T00:00:00Z",  # You can make this dynamic
+        "timestamp": datetime.now().isoformat(),
         "services": {
             "database": {
                 "status": db_status,
