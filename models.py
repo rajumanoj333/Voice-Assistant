@@ -140,10 +140,19 @@ class ConversationService:
         """Get a conversation record by ID"""
         if self.use_supabase:
             record = supabase_client.get_conversation_record(record_id)
-            if record and record.get('audio_input'):
-                # Convert hex strings back to bytes
-                record['audio_input'] = bytes.fromhex(record['audio_input'])
-                record['audio_response'] = bytes.fromhex(record['audio_response'])
+            if record:
+                # Convert hex strings back to bytes, handling None values
+                if record.get('audio_input'):
+                    try:
+                        record['audio_input'] = bytes.fromhex(record['audio_input'])
+                    except (ValueError, TypeError):
+                        record['audio_input'] = b''
+                
+                if record.get('audio_response'):
+                    try:
+                        record['audio_response'] = bytes.fromhex(record['audio_response'])
+                    except (ValueError, TypeError):
+                        record['audio_response'] = b''
             return record
         else:
             # Fallback to PostgreSQL

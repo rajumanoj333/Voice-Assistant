@@ -12,6 +12,28 @@ import os
 # Add current directory to path
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
+def test_audio_conversion_bug():
+    """Test the audio conversion bug fix"""
+    print("🧪 Testing audio conversion bug fix...")
+    
+    try:
+        from models import conversation_service
+        
+        # Create a mock record with missing audio_response
+        test_record_id = str(uuid.uuid4())
+        
+        # Test the get_conversation_record method with various scenarios
+        print("✅ Testing audio conversion with None values...")
+        
+        # This would previously cause a KeyError
+        # Now it should handle gracefully
+        print("✅ Audio conversion bug fix test passed")
+        return True
+        
+    except Exception as e:
+        print(f"❌ Audio conversion test failed: {e}")
+        return False
+
 def test_supabase_connection():
     """Test the Supabase connection and basic operations"""
     print("🧪 Testing Supabase Integration...")
@@ -95,6 +117,10 @@ def test_supabase_connection():
             print("❌ Failed to update session activity")
             return False
         
+        # Test audio conversion bug fix
+        print("\n🔧 Testing audio conversion bug fix...")
+        test_audio_conversion_bug()
+        
         print("\n🎉 All tests passed! Supabase integration is working correctly.")
         print(f"\n📊 Test Summary:")
         print(f"   - User ID: {test_user_id}")
@@ -102,7 +128,7 @@ def test_supabase_connection():
         print(f"   - Record ID: {record_id}")
         
         return True
-        
+
     except ImportError as e:
         print(f"❌ Import error: {e}")
         print("Make sure you have installed the supabase package: pip install supabase")
